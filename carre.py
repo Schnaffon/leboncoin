@@ -2,6 +2,9 @@ import argparse
 
 def plus_grand_carre(x, y, plateau):
     """ Fonction de calcul du plus grand carré sur la droite d'un carreau [x, y]
+    La fonction procède en suivant un modèle d'oignon : on ajoute une nouvelle couche au carré déjà trouvé.
+    Dans un premier temps on cherche un carré en ajoutant des couches par dessus vers les x croissants, puis vers les x décroissants.
+    On procède ensuite dans le sens inverse, et on compare les deux carrés obtenus pour retenir le plus grand.
 
     :param x:
     :param y:
@@ -91,16 +94,6 @@ def parcours_plateau(plateau):
             plateau[base_x - i][base_y + j] = "plein" # Ici c'est un peu laid, le plateau devient hétérogène.
 
 
-    for line in plateau[:-1]:
-        for carreau in line[1:-1]:
-            if carreau == "plein":
-                print("x", end='')
-            elif carreau:
-                print(".", end='')
-            else:
-                print("o", end='')
-        print("")
-
 def load_plateau(file):
     """ Chargement du plateau sous forme d'une liste de listes de booléens
 
@@ -116,16 +109,18 @@ def load_plateau(file):
         taille = symbols[:-4]
         line = f.readline()
         while (line):
+            if line[-1] != "\n":
+                return (plateau, 0, 0, 0, 0) #Si une ligen de se termine pas par un retour à la ligne, le plateau n'est pas valide
             content = [False] # ON ajoute un False au début de chaque ligne pour mieux gérer les bords
             for carreau in line:
-                if carreau == ".":
+                if carreau == vide:
                     content.append(True)
-                elif carreau == "o":
+                elif carreau == obstacle:
                     content.append(False)
                 elif carreau == "\n":
                     continue
                 else:
-                    raise ValueError
+                    return (plateau, 0, 0, 0, 0) # Si un carreau contient un caractère non défini dans l'entete, le plateau n'est pas valide
             content.append(False)
             plateau.append(content) # On ajoute un False à la fin de chaque ligne pour mieux gérer les bords
             line = f.readline()
@@ -139,7 +134,6 @@ def verify_plateau(taille, plateau):
     :param taille:
     :return:
     """
-    print(plateau)
     largeur = len(plateau[0])
     if len(plateau) - 1 != int(taille):
         return False
@@ -154,11 +148,25 @@ if __name__ == "__main__":
                         help='an integer for the accumulator')
     args = parser.parse_args()
     for file in args.files:
-        print(file)
+
         (plateau, taille, vide, obstacle, plein) = load_plateau(file)
+        if taille == 0:
+            continue
         if not verify_plateau(taille, plateau):
             continue
         parcours_plateau(plateau)
+
+        # Impression du résultat
+        print(file)
+        for line in plateau[:-1]:
+            for carreau in line[1:-1]:
+                if carreau == "plein":
+                    print(plein, end='')
+                elif carreau:
+                    print(vide, end='')
+                else:
+                    print(obstacle, end='')
+            print("")
 
 def test_verification():
     plateau = [[True, True, False], [True, False]]
